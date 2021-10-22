@@ -43,7 +43,7 @@ where
     }
 
     pub fn key(&self, k: K) -> Path<T> {
-        Path::new(self.namespace, &k.key())
+        Path::new(self.namespace, &[k.raw_key().as_ref()])
     }
 
     #[cfg(feature = "iterator")]

@@ -120,7 +120,7 @@ where
         height: u64,
     ) -> StdResult<()> {
         // this is the key *relative* to the primary map namespace
-        let pk = key.joined_key();
+        let pk = key.joined_key(key.key());
         if let Some(old) = old_data {
             for index in self.idx.get_indexes() {
                 index.remove(store, &pk, old)?;

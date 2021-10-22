@@ -42,9 +42,8 @@ pub trait PrimaryKey<'a>: Clone + Sized {
 
     fn raw_key(&self) -> Self::KeyType;
 
-    fn joined_key(&self) -> Vec<u8> {
-        let keys = self.key();
-        namespaces_with_key(&keys.namespaces, keys.key.raw_key().as_ref())
+    fn joined_key(&self, key: NamespacedKey<Self>) -> Vec<u8> {
+        namespaces_with_key(&key.namespaces, key.key.raw_key().as_ref())
     }
 }
 
@@ -420,15 +419,23 @@ impl<'a> PrimaryKey<'a> for TimestampKey {
     type SubPrefix = ();
     type Suffix = Self;
     type SuperSuffix = Self;
+    type KeyType = &'a [u8];
 
-    fn key(&self) -> Vec<&[u8]> {
-        self.0.key()
+    fn key(&self) -> NamespacedKey<Self> {
+        NamespacedKey {
+            namespaces: vec![],
+            key: &self.0.into()
+        }
+    }
+
+    fn raw_key(&self) -> Self::KeyType {
+        &self.0.raw_key()
     }
 }
 
 impl<'a> Prefixer<'a> for TimestampKey {
     fn prefix(&self) -> Vec<&[u8]> {
-        self.0.key()
+        vec![self.0.raw_key()]
     }
 }
 

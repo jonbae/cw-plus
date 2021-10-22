@@ -172,7 +172,7 @@ where
     }
 
     pub fn index_key(&self, k: K) -> Vec<u8> {
-        k.joined_key()
+        k.joined_key(k.key())
     }
 
     #[cfg(test)]
@@ -332,7 +332,7 @@ where
     K: PrimaryKey<'a>,
 {
     pub fn index_key(&self, k: K) -> Vec<u8> {
-        k.joined_key()
+        k.joined_key(k.key())
     }
 
     pub fn prefix(&self, p: K::Prefix) -> Prefix<Vec<u8>, T> {
