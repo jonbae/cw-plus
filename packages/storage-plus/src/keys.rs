@@ -41,11 +41,6 @@ pub trait PrimaryKey<'a>: Clone + Sized {
     fn joined_key(&self) -> Vec<u8>;
 }
 
-struct NamespacedKey<'a, T> {
-    namespaces: Vec<&'a [u8]>,
-    key: &'a T,
-}
-
 // Empty / no primary key
 impl<'a> PrimaryKey<'a> for () {
     type Prefix = Self;
@@ -56,7 +51,7 @@ impl<'a> PrimaryKey<'a> for () {
     fn extend_key(&self, k: &mut Vec<u8>) {}
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[[]])
+        namespaces_with_key(&[&[]], &[])
     }
 }
 
@@ -71,7 +66,7 @@ impl<'a> PrimaryKey<'a> for &'a [u8] {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[[&self]])
+        namespaces_with_key(&[&[]], &self)
     }
 }
 
@@ -87,7 +82,7 @@ impl<'a> PrimaryKey<'a> for &'a str {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[[self.as_bytes()]])
+        namespaces_with_key(&[&[]], &self.as_bytes())
     }
 }
 
@@ -101,14 +96,14 @@ impl<'a, T: PrimaryKey<'a> + Prefixer<'a> + KeyDeserialize, U: PrimaryKey<'a> + 
     type SuperSuffix = Self;
 
     fn extend_key(&self, k: &mut Vec<u8>) {
-        k.extend_from_slice(self.as_bytes());
+        self.0.extend_key(k);
+        self.1.extend_key(k);
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        let mut keys: Vec<u8> = [];
-        self.extend_key(&mut keys, self.0);
-        self.extend_key(&mut keys, self.1);
-        namespaces_with_key(&[[]], &[keys])
+        let mut keys: Vec<u8> = vec![];
+        self.extend_key(&mut keys);
+        namespaces_with_key(&[&[]], &keys)
     }
 }
 
@@ -126,15 +121,15 @@ impl<
     type SuperSuffix = (U, V);
 
     fn extend_key(&self, k: &mut Vec<u8>) {
-        k.extend_from_slice(self.as_bytes());
+        self.0.extend_key(k);
+        self.1.extend_key(k);
+        self.2.extend_key(k);
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        let mut keys: Vec<u8> = [];
-        self.extend_key(&mut keys, self.0);
-        self.extend_key(&mut keys, self.1);
-        self.extend_key(&mut keys, self.3);
-        namespaces_with_key(&[[]], &[keys])
+        let mut keys: Vec<u8> = vec![];
+        self.extend_key(&mut keys);
+        namespaces_with_key(&[&[]], &keys)
     }
 }
 
@@ -195,7 +190,7 @@ impl<'a> PrimaryKey<'a> for Vec<u8> {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &self)
+        namespaces_with_key(&[&[]], &self)
     }
 }
 
@@ -216,7 +211,7 @@ impl<'a> PrimaryKey<'a> for String {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[self.as_bytes()])
+        namespaces_with_key(&[&[]], &self.as_bytes())
     }
 }
 
@@ -238,7 +233,7 @@ impl<'a> PrimaryKey<'a> for &'a Addr {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[self.as_bytes()])
+        namespaces_with_key(&[&[]], &self.as_bytes())
     }
 }
 
@@ -260,7 +255,9 @@ impl<'a> PrimaryKey<'a> for Addr {
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[self.as_bytes()])
+        let mut key: Vec<u8> = vec![];
+        self.extend_key(&mut key);
+        namespaces_with_key(&[&[]], &key)
     }
 }
 
@@ -281,11 +278,11 @@ where
     type SuperSuffix = Self;
 
     fn extend_key(&self, k: &mut Vec<u8>) {
-        k.extend_from_slice(self.wrapped);
+        k.extend_from_slice(self.wrapped.as_slice());
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[self.wrapped])
+        namespaces_with_key(&[&[]], &self.wrapped)
     }
 }
 
@@ -368,17 +365,19 @@ impl<'a> PrimaryKey<'a> for TimestampKey {
     type SuperSuffix = Self;
 
     fn extend_key(&self, k: &mut Vec<u8>) {
-        k.extend_from_slice(self.0);
+        self.0.extend_key(k);
     }
 
     fn joined_key(&self) -> Vec<u8> {
-        namespaces_with_key(&[[]], &[self.0])
+        let mut keys: Vec<u8> = vec![];
+        self.extend_key(&mut keys);
+        namespaces_with_key(&[&[]], &keys)
     }
 }
 
 impl<'a> Prefixer<'a> for TimestampKey {
     fn prefix(&self) -> Vec<&[u8]> {
-        vec![self.0.raw_key()]
+        vec![&self.0.wrapped]
     }
 }
 

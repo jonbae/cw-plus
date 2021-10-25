@@ -43,7 +43,9 @@ where
     }
 
     pub fn key(&self, k: K) -> Path<T> {
-        Path::new(self.namespace, &[k.raw_key().as_ref()])
+        let mut key: Vec<u8> = vec![];
+        k.extend_key(&mut key);
+        Path::new(self.namespace, &[&key])
     }
 
     #[cfg(feature = "iterator")]
