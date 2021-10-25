@@ -96,6 +96,15 @@ impl KeyDeserialize for &Addr {
     }
 }
 
+impl KeyDeserialize for u32 {
+    type Output = u32;
+
+    #[inline(always)]
+    fn from_vec(value: Vec<u8>) -> StdResult<Self::Output> {
+        Self::Output::from_vec(value)
+    }
+}
+
 macro_rules! integer_de {
     (for $($t:ty),+) => {
         $(impl KeyDeserialize for IntKey<$t> {
